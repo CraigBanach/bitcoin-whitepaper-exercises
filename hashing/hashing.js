@@ -28,14 +28,10 @@ function verifyChain(chain) {
 }
 
 function verifyBlock(block, prevBlockHash) {
-	const hash = block.hash;
-	delete block.hash;
-	const computedHash = blockHash(block);
-
 	return (block.data && block.data.length !== 0)
 		&& (block.index === 0 || block.prevHash && block.prevHash.length !== 0 && block.prevHash === prevBlockHash)
 		&& (block.index >= 0)
-		&& (hash === computedHash || (block.index === 0 && hash === "000000"));
+		&& (block.hash === blockHash(block) || (block.index === 0 && block.hash === "000000"));
 }
 
 // The Power of a Smile
