@@ -156,7 +156,7 @@ async function verifyTransaction(tran) {
 	return tran.hash === transactionHash(tran)
 		&& tran.pubKey 
 		&& tran.signature
-		&& verifySignature(tran.signature, tran.pubKey);
+		&& await verifySignature(tran.signature, tran.pubKey);
 }
 
 async function verifyChain(chain) {

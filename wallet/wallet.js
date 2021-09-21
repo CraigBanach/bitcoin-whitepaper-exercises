@@ -82,53 +82,69 @@ async function spend(fromAccount,toAccount,amountToSpend) {
 };
 	
 	// pick inputs to use from fromAccount's outputs (i.e. previous txns, see line 22), sorted descending
-	// var sortedInputs =
+	var sortedInputs = [...fromAccount.outputs].sort(function sort(a, b) {
+		return b.amount - a.amount;
+	});
+	var inputsToUse = [];
+	var inputAmounts = 0;
 	
-// 	for (let input of sortedInputs) {
-// 		// remove input from output-list
+	for (let input of sortedInputs) {
+		// remove input from output-list
+		fromAccount.outputs.splice(fromAccount.outputs.indexOf(input), 1);
 
+		inputsToUse.push(input);
+		inputAmounts += input.amount;
 
-// 		// do we have enough inputs to cover the spent amount?
+		// do we have enough inputs to cover the spent amount?
+		if (inputAmounts >= amountToSpend) break;
+	}
 
-	
-	
-// 	}
-	
-	
-	
-// 	if (inputAmounts < amountToSpend) {
-
-// 		throw `Don't have enough to spend ${amountToSpend}!`;
-// 	}	
+	if (inputAmounts < amountToSpend) {
+		fromAccount.outputs.push(...inputsToUse);
+		throw `Don't have enough to spend ${amountToSpend}!`;
+	}	
 
 	// sign and record inputs
-
+	var fromPrivKey = fromAccount.privKey;
+	for (let input of inputsToUse) {
+		trData.inputs.push(
+			await Blockchain.authorizeInput({
+				account: input.account,
+				amount: input.amount,
+			}, fromPrivKey)
+		)
+	}
 	
 	// record output
-
+	trData.outputs.push({ account: toAccount.pubKey, amount: amountToSpend });
 	
 	// is "change" output needed?
-	
+	if (inputAmounts >= amountToSpend) {
+		trData.outputs.push({ account: fromAccount.pubKey, amount: (inputAmounts - amountToSpend) });
+	}
 	
 	// create transaction and add it to blockchain
 	var tr = Blockchain.createTransaction(trData);
 	Blockchain.insertBlock(
-	// TODO .createBlock method
-
+		Blockchain.createBlock([ tr ])
 	);	
 	
 	// record outputs in our wallet (if needed)	
-	
+	for (let output of trData.outputs) {
+		if (output.account in wallet.accounts) {
+			wallet.accounts[output.account].outputs.push(output);
+		}
+	}
 }
 
 function accountBalance(account) {
 	var balance = 0;
 
-// 	if (account in wallet.accounts) {
-
-// 	}	
+	if (account in wallet.accounts) {
+		wallet.accounts[account].outputs.forEach(output => {
+			balance += output.amount;
+		});
+	}	
 	
-	
-// 	return balance;
-	
+	return balance;
 }
